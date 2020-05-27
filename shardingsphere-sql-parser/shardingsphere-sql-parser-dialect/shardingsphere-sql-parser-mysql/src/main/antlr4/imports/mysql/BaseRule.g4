@@ -108,15 +108,38 @@ unreservedWord
     | SUBJECT | ISSUER | OLD | RANDOM | RETAIN | MAX_USER_CONNECTIONS | MAX_CONNECTIONS_PER_HOUR | MAX_UPDATES_PER_HOUR
     | MAX_QUERIES_PER_HOUR | REUSE | OPTIONAL | HISTORY | NEVER | EXPIRE | TYPE | CONTEXT | CODE | CHANNEL | SOURCE
     | IO_THREAD | SQL_THREAD | SQL_BEFORE_GTIDS | SQL_AFTER_GTIDS | MASTER_LOG_FILE | MASTER_LOG_POS | RELAY_LOG_FILE
-    | RELAY_LOG_POS | SQL_AFTER_MTS_GAPS | UNTIL | DEFAULT_AUTH | PLUGIN_DIR | STOP | SIGNED
+    | RELAY_LOG_POS | SQL_AFTER_MTS_GAPS | UNTIL | DEFAULT_AUTH | PLUGIN_DIR | STOP | SIGNED | FAILED_LOGIN_ATTEMPTS
+    | PASSWORD_LOCK_TIME | MASTER_COMPRESSION_ALGORITHMS | MASTER_ZSTD_COMPRESSION_LEVEL | MASTER_SSL | MASTER_SSL_CA
+    | MASTER_SSL_CAPATH | MASTER_SSL_CERT | MASTER_SSL_CRL | MASTER_SSL_CRLPATH | MASTER_SSL_KEY | MASTER_SSL_CIPHER
+    | MASTER_TLS_VERSION | MASTER_TLS_CIPHERSUITES | MASTER_PUBLIC_KEY_PATH | GET_MASTER_PUBLIC_KEY | IGNORE_SERVER_IDS
+    | MASTER_HOST | MASTER_USER | MASTER_PASSWORD | MASTER_PORT | PRIVILEGE_CHECKS_USER | REQUIRE_ROW_FORMAT | MASTER_CONNECT_RETRY
+    | MASTER_RETRY_COUNT | MASTER_DELAY | MASTER_HEARTBEAT_PERIOD | MASTER_AUTO_POSITION | REPLICATE_DO_DB | REPLICATE_IGNORE_DB
+    | REPLICATE_DO_TABLE | REPLICATE_IGNORE_TABLE | REPLICATE_WILD_DO_TABLE | REPLICATE_WILD_IGNORE_TABLE | REPLICATE_REWRITE_DB
+    | GROUP_REPLICATION | ENGINES
     ;
 
 variable
-    : (AT_? AT_)? (GLOBAL | PERSIST | PERSIST_ONLY | SESSION)? DOT_? identifier
+    : (AT_? AT_)? scope? DOT_? identifier
+    ;
+
+scope
+    : GLOBAL | PERSIST | PERSIST_ONLY | SESSION | LOCAL
     ;
 
 schemaName
     : identifier
+    ;
+
+schemaNames
+    : schemaName (COMMA_ schemaName)*
+    ;
+
+schemaPairs
+    : schemaPair (COMMA_ schemaPair)*
+    ;
+
+schemaPair
+    : LP_ schemaName COMMA_ schemaName RP_
     ;
 
 tableName
@@ -167,6 +190,10 @@ owner
     : identifier
     ;
 
+alias
+    : identifier | STRING_
+    ;
+
 name
     : identifier
     ;
@@ -181,6 +208,10 @@ columnNames
 
 groupName
     : IDENTIFIER_
+    ;
+
+routineName
+    : identifier
     ;
 
 shardLibraryName
@@ -285,7 +316,7 @@ predicate
     | bitExpr NOT? BETWEEN bitExpr AND predicate
     | bitExpr SOUNDS LIKE bitExpr
     | bitExpr NOT? LIKE simpleExpr (ESCAPE simpleExpr)?
-    | bitExpr NOT? (REGEXP | RLIKE) bitExpr
+    | bitExpr NOT? REGEXP bitExpr
     | bitExpr
     ;
 
@@ -397,7 +428,8 @@ positionFunction
     ;
 
 substringFunction
-    :  (SUBSTRING | SUBSTR) LP_ expr FROM NUMBER_ (FOR NUMBER_)? RP_
+    : (SUBSTRING | SUBSTR) LP_ expr FROM NUMBER_ (FOR NUMBER_)? RP_
+    | (SUBSTRING | SUBSTR) LP_ expr COMMA_ NUMBER_ (COMMA_ NUMBER_)? RP_
     ;
 
 extractFunction
@@ -472,6 +504,14 @@ caseExpression
     : CASE simpleExpr? caseWhen_+ caseElse_? END
     ;
 
+datetimeExpr
+    : expr
+    ;
+
+binaryLogFileIndexNumber
+    : NUMBER_
+    ;
+
 caseWhen_
     : WHEN expr THEN expr
     ;
@@ -503,14 +543,14 @@ orderByItem
     ;
 
 dataType
-    : dataTypeName dataTypeLength? characterSet_? collateClause_? (UNSIGNED | SIGNED)? ZEROFILL? | dataTypeName collectionOptions characterSet_? collateClause_?
+    : dataTypeName dataTypeLength? characterSet_? collateClause_? ZEROFILL? | dataTypeName collectionOptions characterSet_? collateClause_?
     ;
 
 dataTypeName
-    : INTEGER | INT | SMALLINT | TINYINT | MEDIUMINT | BIGINT | DECIMAL| NUMERIC | FLOAT | DOUBLE | BIT | BOOL | BOOLEAN
+    : (UNSIGNED | SIGNED)? INTEGER | INT | SMALLINT | TINYINT | MEDIUMINT | BIGINT | DECIMAL| NUMERIC | FLOAT | DOUBLE | BIT | BOOL | BOOLEAN
     | DEC | DATE | DATETIME | TIMESTAMP | TIME | YEAR | CHAR | VARCHAR | BINARY | VARBINARY | TINYBLOB | TINYTEXT | BLOB
     | TEXT | MEDIUMBLOB | MEDIUMTEXT | LONGBLOB | LONGTEXT | ENUM | SET | GEOMETRY | POINT | LINESTRING | POLYGON
-    | MULTIPOINT | MULTILINESTRING | MULTIPOLYGON | GEOMETRYCOLLECTION | JSON
+    | MULTIPOINT | MULTILINESTRING | MULTIPOLYGON | GEOMETRYCOLLECTION | JSON | UNSIGNED | SIGNED
     ;
 
 dataTypeLength
@@ -535,4 +575,24 @@ ignoredIdentifier_
 
 ignoredIdentifiers_
     : ignoredIdentifier_ (COMMA_ ignoredIdentifier_)*
+    ;
+
+fieldOrVarSpec
+    : LP_ (identifier (COMMA_ identifier)*)? RP_
+    ;
+
+notExistClause_
+    : (IF NOT EXISTS)?
+    ;
+
+existClause_
+    : (IF EXISTS)?
+    ;
+
+pattern
+    : STRING_
+    ;
+
+connectionId_
+    : NUMBER_
     ;

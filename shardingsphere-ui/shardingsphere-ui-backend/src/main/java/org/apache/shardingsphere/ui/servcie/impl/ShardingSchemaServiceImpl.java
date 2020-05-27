@@ -21,14 +21,14 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import org.apache.shardingsphere.infra.config.DataSourceConfiguration;
 import org.apache.shardingsphere.orchestration.center.ConfigCenterRepository;
 import org.apache.shardingsphere.ui.servcie.ConfigCenterService;
-import org.apache.shardingsphere.underlying.common.config.DataSourceConfiguration;
 import org.apache.shardingsphere.ui.servcie.ShardingSchemaService;
 import org.apache.shardingsphere.ui.util.ConfigurationYamlConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,7 +40,7 @@ import java.util.Map;
 @Service
 public final class ShardingSchemaServiceImpl implements ShardingSchemaService {
     
-    @Autowired
+    @Resource
     private ConfigCenterService configCenterService;
     
     @Override
@@ -93,13 +93,7 @@ public final class ShardingSchemaServiceImpl implements ShardingSchemaService {
     
     private void checkRuleConfiguration(final String configData) {
         try {
-            if (configData.contains("encryptors:\n")) {
-                ConfigurationYamlConverter.loadEncryptRuleConfiguration(configData);
-            } else if (configData.contains("tables:\n") || configData.contains("defaultTableStrategy:\n")) {
-                ConfigurationYamlConverter.loadShardingRuleConfiguration(configData);
-            } else {
-                ConfigurationYamlConverter.loadMasterSlaveRuleConfiguration(configData);
-            }
+            ConfigurationYamlConverter.loadRuleConfigurations(configData);
             // CHECKSTYLE:OFF
         } catch (final Exception ex) {
             // CHECKSTYLE:ON
@@ -135,7 +129,7 @@ public final class ShardingSchemaServiceImpl implements ShardingSchemaService {
         ConfigCenterRepository configCenterRepository = configCenterService.getActivatedConfigCenter();
         String schemaPath = configCenterService.getActivateConfigurationNode().getSchemaPath();
         String schemaNames = configCenterRepository.get(schemaPath);
-        List<String> schemaNameList = Strings.isNullOrEmpty(schemaNames)?new ArrayList<>():new ArrayList<>(Splitter.on(",").splitToList(schemaNames));
+        List<String> schemaNameList = Strings.isNullOrEmpty(schemaNames) ? new ArrayList<>() : new ArrayList<>(Splitter.on(",").splitToList(schemaNames));
         if (!schemaNameList.contains(schemaName)) {
             schemaNameList.add(schemaName);
             configCenterRepository.persist(schemaPath, Joiner.on(",").join(schemaNameList));
